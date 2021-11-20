@@ -2,6 +2,7 @@
 #include <string.h>
 #include <fstream>
 #include <vector>
+#include <regex>
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -26,12 +27,19 @@ bool get_files(vector<string> &files)
 {
     DIR *dir;
     struct dirent *ent;
+    regex file_name_regex("[1-9][0-9]*\\.csv");
 
     if ((dir = opendir(FILES_DIR)) == NULL)
+    {
+        cerr << "Directory non-existent!\n";
         return 0;
+    }
 
     while ((ent = readdir(dir)) != NULL)
-        cout << ent->d_name << endl;
+    {
+        if ( regex_match(ent->d_name, file_name_regex) )
+            files.push_back(ent->d_name);
+    }
     
     closedir (dir);
 
@@ -60,20 +68,20 @@ int main(int argc, char *argv[])
     }
 
     //call mapper proceses
-    vector<int[2]> fd; // unnamed pipe for mappers
     int fd2[2]; // unnamed pipe for reducer
 
     for (int i = 0; i < files.size(); i++)
     {
+        int fd[2]; // unnamed pipe for mappers
         int digit_count = count_digit(i);
 
-        if (pipe(fd[i]) == -1)
+        if (pipe(fd) == -1)
         {
             cerr << "Pipe for mapper " << i << " failed!" << endl;
             return 0;
         }
 
-        int pid = fork();
+        pid_t pid = fork();
         if (pid < 0)
         {
             cerr << "Mapper " << i << " failed to start!" << endl;
@@ -82,12 +90,12 @@ int main(int argc, char *argv[])
 
         if (pid == 0) //child process
         {
-            close(fd[i][WRITE]);
+            close(fd[WRITE]);
 
             char file[FILES_DIR_LEN + digit_count + 4];
             bzero(file, FILES_DIR_LEN + digit_count + 4);
-            read(fd[i][READ], file, FILES_DIR_LEN + digit_count + 4); // 4 for .csv
-            close(fd[i][READ]);
+            read(fd[READ], file, FILES_DIR_LEN + digit_count + 4 + 1); // 4 for .csv 1 for NULL(?)
+            close(fd[READ]);
 
             char* args[] = {"./mapper.out", file, NULL}; 
             execv("./mapper.out", args);
@@ -95,19 +103,15 @@ int main(int argc, char *argv[])
         else //parent process
         {
             //give the i'th csv file to child process
-            close(fd[i][READ]);
+            close(fd[READ]);
 
-            if (mkfifo(FIFO_MAIN, 0777) == -1)
-            {
-                cerr << "mkfifo for mapper " << i << " failed!\n";
-                return 0;
-            }
+            cout << "main sending file " << files[i] << " for mapper " << i << endl;
 
-            cout << "main sending file " << files[i] << " for mapper\n";
+            string file = FILES_DIR + files[i];
 
-            write(fd[i][WRITE], files[i].c_str(), FILES_DIR_LEN + digit_count + 4);
+            write(fd[WRITE], file.c_str(), FILES_DIR_LEN + digit_count + 4 + 1); // 4 for .csv
             
-            close(fd[i][WRITE]);
+            close(fd[WRITE]);
        }
     }
 

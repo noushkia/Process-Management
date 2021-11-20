@@ -8,10 +8,9 @@ std::vector<std::string> read_file(const std::string &file)
     ifstream input_file(file);
 
     if(!input_file.is_open()) 
-        throw std::runtime_error("Could not open file!");
+        throw std::runtime_error("Could not open file " + file);
 
     string line;
-
     //read the file line by line
     while(getline(input_file, line, DELIM))
     {
@@ -42,7 +41,8 @@ std::map<std::string, int> map_words(const std::vector<std::string> &words)
 
     for (auto const& word:mapped_words)
         cout << word.first << ": " << word.second << endl;
-
+    cout << endl;    
+    
     return mapped_words;
 }
 
