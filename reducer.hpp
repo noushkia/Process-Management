@@ -2,6 +2,8 @@
 #include <string.h>
 #include <fstream>
 #include <vector>
+#include <map>
+#include <sstream>
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -9,5 +11,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "defs.hpp"
+
+//get the maps from named pipes
+std::map<std::string, int> recieve_words();
 
 // count all instances of given words

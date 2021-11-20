@@ -68,11 +68,9 @@ int main(int argc, char *argv[])
     }
 
     //call mapper proceses
-    int fd2[2]; // unnamed pipe for reducer
-
     for (int i = 0; i < files.size(); i++)
     {
-        int fd[2]; // unnamed pipe for mappers
+        int fd[2]; // unnamed pipe for mappers (?: why vector didn't work)
         int digit_count = count_digit(i);
 
         if (pipe(fd) == -1)
@@ -94,7 +92,7 @@ int main(int argc, char *argv[])
 
             char file[FILES_DIR_LEN + digit_count + 4];
             bzero(file, FILES_DIR_LEN + digit_count + 4);
-            read(fd[READ], file, FILES_DIR_LEN + digit_count + 4 + 1); // 4 for .csv 1 for NULL(?)
+            read(fd[READ], file, FILES_DIR_LEN + digit_count + 4 + 1); // 4 for .csv 1 for NULL
             close(fd[READ]);
 
             char* args[] = {"./mapper.out", file, NULL}; 
@@ -115,7 +113,45 @@ int main(int argc, char *argv[])
        }
     }
 
-    //get result from reducer
+    //start reducer process
+    int fd[2]; // unnamed pipe for reducer
+    if (pipe(fd) == -1)
+    {
+        cerr << "Pipe for reducer failed!" << endl;
+        return 1;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        cerr << "Reducer failed to start!" << endl;
+        return 1;
+    }
+    if (pid == 0) //child process
+    {
+        close(fd[READ]);
+
+        char* args[] = {"./reducer.out", NULL}; 
+        if (execv("./reducer.out", args))
+            cout << "Main called reducer process" << endl;
+    }
+    else //parent process
+    {
+        close(fd[WRITE]);
+        char word_count[MAX_LEN];
+        bzero(word_count, MAX_LEN);
+        while(read(fd[READ], word_count, MAX_LEN))
+        {
+            //write_output(); on file
+            cout << "Recieved from reducer: " << word_count << endl;
+            bzero(word_count, MAX_LEN);
+        }
+        close(fd[READ]);
+        close(fd[WRITE]);
+    }
+
+    cout << "FInished map reducing!" << endl;
+
     // write_output(result);
     
     return 0;

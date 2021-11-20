@@ -37,13 +37,30 @@ std::map<std::string, int> map_words(const std::vector<std::string> &words)
             mapped_words[word]++;
         else
             mapped_words.insert({word, 1});
-    }
-
-    for (auto const& word:mapped_words)
-        cout << word.first << ": " << word.second << endl;
-    cout << endl;    
+    }    
     
     return mapped_words;
+}
+
+bool write_to_pipe(map<string, int> &mapped_words)
+{
+
+    if (mkfifo(FIFO_REDUCE, 0777) == -1 && errno != EEXIST)
+    {
+        cerr << "Failed to open fifo file for mapper"  << endl;
+        return 0;
+    }
+
+    int fifo_id = open(FIFO_REDUCE, O_WRONLY);
+    for (auto const& word:mapped_words)
+    {
+        string str = word.first + KEY_VAL_SEPERATOR + to_string(word.second);
+        cout << "Mapper writing " << str << " to reducer" << endl;
+        write(fifo_id, str.c_str(), str.size()+1);
+    }
+    close(fifo_id);
+
+    return 1;
 }
 
 int main(int argc, char *argv[])
@@ -53,9 +70,13 @@ int main(int argc, char *argv[])
     
     vector<string> words = read_file(file);
 
-    cout << "Mapper mapped the words for file: " << file << endl;
-
     map<string, int> mapped_words = map_words(words);
+
+    if (write_to_pipe(mapped_words) == 0)
+    {
+        cerr << "Error sending words to reducer!" << endl;
+        return 1;
+    }
 
     //send the map to reducer (open named pipe and send it)
 

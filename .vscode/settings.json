@@ -44,6 +44,7 @@
         "codecvt": "cpp",
         "ctime": "cpp",
         "filesystem": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "regex": "cpp"
     }
 }
