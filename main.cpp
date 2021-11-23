@@ -46,13 +46,13 @@ bool get_files(vector<string> &files)
     return 1;
 }
 
-void write_output(const vector<string> &result)
+void write_output(const map<string, int> &words)
 {
     ofstream output_file;
     output_file.open(OUTPUT_FILENAME);
     
-    for (auto line: result)
-        output_file << line << endl;
+    for (auto word: words)
+        output_file << word.first << ": " << word.second << endl;
 
     output_file.close();
 }
@@ -130,29 +130,34 @@ int main(int argc, char *argv[])
     if (pid == 0) //child process
     {
         close(fd[READ]);
-
-        char* args[] = {"./reducer.out", NULL}; 
+        char fdwrite[count_digit(fd[WRITE])+1];
+        sprintf(fdwrite, "%d", fd[WRITE]);
+        char* args[] = {"./reducer.out", fdwrite, NULL}; 
         if (execv("./reducer.out", args))
             cout << "Main called reducer process" << endl;
     }
     else //parent process
     {
+        map<string, int> words;
         close(fd[WRITE]);
+        wait(NULL);
         char word_count[MAX_LEN];
         bzero(word_count, MAX_LEN);
         while(read(fd[READ], word_count, MAX_LEN))
         {
-            //write_output(); on file
-            cout << "Recieved from reducer: " << word_count << endl;
+            stringstream line(word_count);
+            string word;
+            string count;
+            getline(line, word, KEY_VAL_SEPERATOR);
+            getline(line, count);
+            cout<<"Main " << word << KEY_VAL_SEPERATOR << count << endl;
+            words[word] = stoi(count);
             bzero(word_count, MAX_LEN);
         }
         close(fd[READ]);
-        close(fd[WRITE]);
+        write_output(words);
+        cout << "Finished map reducing!" << endl;
     }
-
-    cout << "FInished map reducing!" << endl;
-
-    // write_output(result);
     
     return 0;
 }

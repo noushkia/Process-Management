@@ -9,39 +9,42 @@ std::map<std::string, int> recieve_words()
     char msg[MAX_LEN];
     while (read(fifo_id, msg, MAX_LEN))
     {
-        string word_count = msg;
-        int seperator_idx = word_count.find(KEY_VAL_SEPERATOR);
-        if (seperator_idx == string::npos)
+        string word_count;
+        stringstream word_counts(msg);
+        while (getline(word_counts, word_count))
         {
-            cerr << "invalid input!\n" << endl;
-            continue;
+            int seperator_idx = word_count.find(KEY_VAL_SEPERATOR);
+            string word = word_count.substr(0, seperator_idx);
+            int count = stoi(word_count.substr(seperator_idx+1, word_count.size()-seperator_idx));
+
+            if (words.find(word) == words.end())
+                words[word] += count;
+            else
+                words[word] = count;
         }
-
-        string word = word_count.substr(0, seperator_idx);
-        int count = stoi(word_count.substr(seperator_idx+1, word_count.size()-seperator_idx));
-
-        if (words.find(word) != words.end())
-            words[word] += count;
-        else
-            words.insert({word, count});
-
-        cout << word << KEY_VAL_SEPERATOR << count << endl;
     }
-
     close(fifo_id); 
     return words;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    int fdwrite = atoi(argv[1]);
     int fifo_fd = open(FIFO_REDUCE, O_RDONLY);
 
     if (fifo_fd < 0)
-        cerr << "Filed to open fifo file!" << endl;
+        cerr << "Failed to open fifo file!" << endl;
 
     map<string, int> words = recieve_words();
     
-    //send the words back to main
-
+    string words_str = "";
+    for (auto word : words)
+    {
+        string str = word.first + KEY_VAL_SEPERATOR + to_string(word.second) + "\n";
+        words_str += str;
+    }
+    write(fdwrite, words_str.c_str(), MAX_LEN);
+    close(fdwrite);
+    
     return 0;
 }

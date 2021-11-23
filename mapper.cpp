@@ -42,8 +42,9 @@ std::map<std::string, int> map_words(const std::vector<std::string> &words)
     return mapped_words;
 }
 
-bool write_to_pipe(map<string, int> &mapped_words)
+bool write_to_pipe(map<string, int> &mapped_words, string mapper_id)
 {
+    string fifo_file = FIFO_REDUCE;
 
     if (mkfifo(FIFO_REDUCE, 0777) == -1 && errno != EEXIST)
     {
@@ -51,13 +52,16 @@ bool write_to_pipe(map<string, int> &mapped_words)
         return 0;
     }
 
-    int fifo_id = open(FIFO_REDUCE, O_WRONLY);
-    for (auto const& word:mapped_words)
+    int fifo_id = open(fifo_file.c_str(), O_WRONLY);
+
+    cout << "Mapper " << mapper_id << ": Sending mapped words to reducer using file " << fifo_id << endl;
+    string words = "";
+    for (auto word:mapped_words)
     {
-        string str = word.first + KEY_VAL_SEPERATOR + to_string(word.second);
-        cout << "Mapper writing " << str << " to reducer" << endl;
-        write(fifo_id, str.c_str(), str.size()+1);
+        string str = word.first + KEY_VAL_SEPERATOR + to_string(word.second) + "\n";
+        words+=str;
     }
+    write(fifo_id, words.c_str(), MAX_LEN);
     close(fifo_id);
 
     return 1;
@@ -66,19 +70,24 @@ bool write_to_pipe(map<string, int> &mapped_words)
 int main(int argc, char *argv[])
 {
     string file = string(argv[1]);
-    cout << file << " assigned to a mapper."  << endl << endl;
-    
+    regex rgx(".*(\\w+)\\.csv.*");
+    smatch match;
+    if (!regex_search(file, match, rgx))
+        cerr << "Invalid arguments for mapper!" << endl;
+
+    cout << file << " assigned to mapper " << match[1] << endl << endl;
+
     vector<string> words = read_file(file);
+    cout << "Mapper " << match[1] << ": read from file\n";
 
     map<string, int> mapped_words = map_words(words);
+    cout << "Mapper " << match[1] << ": mapped words\n";
 
-    if (write_to_pipe(mapped_words) == 0)
+    if (write_to_pipe(mapped_words, match[1]) == 0)
     {
         cerr << "Error sending words to reducer!" << endl;
         return 1;
     }
-
-    //send the map to reducer (open named pipe and send it)
 
     return 0;
 }

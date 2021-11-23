@@ -45,6 +45,7 @@
         "ctime": "cpp",
         "filesystem": "cpp",
         "ratio": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "bitset": "cpp"
     }
 }

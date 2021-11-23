@@ -6,7 +6,7 @@
 #define FILES_DIR_LEN 10
 #define READ 0
 #define WRITE 1
-#define MAX_LEN 80 //?
+#define MAX_LEN 8000 //?
 #define KEY_VAL_SEPERATOR ':'
 #define FIFO_REDUCE "fifo_reduce"
 #define OUTPUT_FILENAME "output.csv"

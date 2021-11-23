@@ -1,2 +1,5 @@
 build
 *.out
+output.csv
+fifo_reduce
+.vscode

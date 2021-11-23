@@ -13,6 +13,6 @@
 #include "defs.hpp"
 
 //get the maps from named pipes
-std::map<std::string, int> recieve_words();
+std::map<std::string, int> recieve_words(int mapper_count);
 
 // count all instances of given words
