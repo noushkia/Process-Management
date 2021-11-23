@@ -2,40 +2,28 @@
 
 using namespace std;
 
-std::map<std::string, int> recieve_words()
+std::map<std::string, int> recieve_words(int mapper_count)
 {
     map<string, int> words;
-    int fifo_id = open(FIFO_REDUCE, O_RDONLY);
-    char msg[MAX_LEN];
-    while (read(fifo_id, msg, MAX_LEN))
-    {
-        string word_count;
-        stringstream word_counts(msg);
-        while (getline(word_counts, word_count))
-        {
-            int seperator_idx = word_count.find(KEY_VAL_SEPERATOR);
-            string word = word_count.substr(0, seperator_idx);
-            int count = stoi(word_count.substr(seperator_idx+1, word_count.size()-seperator_idx));
+    for(int i = 1; i <= mapper_count; i++)
+    {   
+        string fifofile = FIFO_REDUCE+to_string(i);
+        int fifo_id = open(fifofile.c_str(), O_RDONLY);
+        char msg[MAX_LEN];
+        while (read(fifo_id, msg, MAX_LEN))
+            decode_dict(msg, words);
 
-            if (words.find(word) == words.end())
-                words[word] += count;
-            else
-                words[word] = count;
-        }
+        close(fifo_id);
     }
-    close(fifo_id); 
+
     return words;
 }
 
 int main(int argc, char *argv[])
 {
     int fdwrite = atoi(argv[1]);
-    int fifo_fd = open(FIFO_REDUCE, O_RDONLY);
 
-    if (fifo_fd < 0)
-        cerr << "Failed to open fifo file!" << endl;
-
-    map<string, int> words = recieve_words();
+    map<string, int> words = recieve_words(atoi(argv[2]));
     
     string words_str = "";
     for (auto word : words)

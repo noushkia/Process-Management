@@ -44,9 +44,9 @@ std::map<std::string, int> map_words(const std::vector<std::string> &words)
 
 bool write_to_pipe(map<string, int> &mapped_words, string mapper_id)
 {
-    string fifo_file = FIFO_REDUCE;
+    string fifo_file = FIFO_REDUCE + mapper_id;
 
-    if (mkfifo(FIFO_REDUCE, 0777) == -1 && errno != EEXIST)
+    if (mkfifo(fifo_file.c_str(), 0777) == -1 && errno != EEXIST)
     {
         cerr << "Failed to open fifo file for mapper"  << endl;
         return 0;

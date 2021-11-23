@@ -46,6 +46,8 @@
         "filesystem": "cpp",
         "ratio": "cpp",
         "regex": "cpp",
-        "bitset": "cpp"
+        "bitset": "cpp",
+        "cstring": "cpp",
+        "iterator": "cpp"
     }
 }

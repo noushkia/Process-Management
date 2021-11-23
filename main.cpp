@@ -1,16 +1,6 @@
-#include <iostream>
-#include <string.h>
-#include <fstream>
-#include <vector>
-#include <regex>
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <sys/stat.h>
+#include "libs.hpp"
 #include "defs.hpp"
+#include "utilities.hpp"
 
 using namespace std;
 
@@ -132,7 +122,10 @@ int main(int argc, char *argv[])
         close(fd[READ]);
         char fdwrite[count_digit(fd[WRITE])+1];
         sprintf(fdwrite, "%d", fd[WRITE]);
-        char* args[] = {"./reducer.out", fdwrite, NULL}; 
+        char map_count[count_digit(files.size())+1];
+        sprintf(map_count, "%d", int(files.size()));
+
+        char* args[] = {"./reducer.out", fdwrite, map_count, NULL}; 
         if (execv("./reducer.out", args))
             cout << "Main called reducer process" << endl;
     }
@@ -141,19 +134,11 @@ int main(int argc, char *argv[])
         map<string, int> words;
         close(fd[WRITE]);
         wait(NULL);
+        // while (wait(NULL) != -1);
         char word_count[MAX_LEN];
         bzero(word_count, MAX_LEN);
-        while(read(fd[READ], word_count, MAX_LEN))
-        {
-            stringstream line(word_count);
-            string word;
-            string count;
-            getline(line, word, KEY_VAL_SEPERATOR);
-            getline(line, count);
-            cout<<"Main " << word << KEY_VAL_SEPERATOR << count << endl;
-            words[word] = stoi(count);
-            bzero(word_count, MAX_LEN);
-        }
+        read(fd[READ], word_count, MAX_LEN);
+        decode_dict(word_count, words);
         close(fd[READ]);
         write_output(words);
         cout << "Finished map reducing!" << endl;
