@@ -3,9 +3,9 @@ This is the second project of OS course offered at the University of Tehran.
 
 
 # To Execute
-Run the following command in the terminal:
-    `$make
-    `$./main.out
+Run the following command in the terminal:<br>
+    `$ make`<br>
+    `$ ./main.out`<br>
 
 Make sure to add .csv test files to /testcases folder.
 
